@@ -9,6 +9,15 @@ export const config = {
   port: parseInt(process.env.PORT || '3021', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   appOrigin: process.env.APP_ORIGIN || 'http://localhost:3000',
+  
+  // CORS origins - support multiple frontend domains including dynamic Vercel URLs
+  corsOrigins: [
+    process.env.APP_ORIGIN || 'http://localhost:3000',
+    'https://religiousfreedom.vercel.app',
+    'https://hsa-religious-freedom-leadpage-frontend.vercel.app', // Production domain
+    /^https:\/\/hsa-religious-freedom-leadpage-frontend-.*\.vercel\.app$/, // Dynamic Vercel URLs
+    /^https:\/\/.*\.vercel\.app$/, // All Vercel domains as fallback
+  ],
 
   // Supabase
   supabase: {

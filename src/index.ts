@@ -21,7 +21,29 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: config.appOrigin,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin matches any allowed pattern
+    for (const allowedOrigin of config.corsOrigins) {
+      if (typeof allowedOrigin === 'string') {
+        // Exact string match
+        if (origin === allowedOrigin) {
+          return callback(null, true);
+        }
+      } else if (allowedOrigin instanceof RegExp) {
+        // Regex pattern match
+        if (allowedOrigin.test(origin)) {
+          return callback(null, true);
+        }
+      }
+    }
+    
+    // Log unauthorized origin attempts
+    logger.warn('CORS blocked request', { origin, allowedOrigins: config.corsOrigins });
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
