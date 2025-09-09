@@ -10,12 +10,16 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   appOrigin: process.env.APP_ORIGIN || 'http://localhost:3000',
   
-  // CORS origins - support multiple frontend domains including dynamic Vercel URLs
+  // CORS origins - support multiple frontend domains including stable Vercel subdomains
   corsOrigins: [
     process.env.APP_ORIGIN || 'http://localhost:3000',
-    'https://religiousfreedom.vercel.app',
+    'https://hsa-petitions.vercel.app', // NEW: Stable frontend domain
+    'https://hsa-petitions-api.vercel.app', // NEW: Stable backend domain
+    'https://religiousfreedom.vercel.app', // Original domain
     'https://hsa-religious-freedom-leadpage-frontend.vercel.app', // Production domain
+    'https://hsa-religious-freedom-leadpage-fron-sandy.vercel.app', // Current frontend
     /^https:\/\/hsa-religious-freedom-leadpage-frontend-.*\.vercel\.app$/, // Dynamic Vercel URLs
+    /^https:\/\/hsa-religious-freedom-leadpage-fron-.*\.vercel\.app$/, // Shortened Vercel URLs
     /^https:\/\/.*\.vercel\.app$/, // All Vercel domains as fallback
   ],
 
