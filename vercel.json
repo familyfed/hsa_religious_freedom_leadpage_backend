@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "hsa-religious-freedom-leadpage-backend",
   "builds": [
     {
       "src": "src/index.ts",
@@ -14,5 +15,9 @@
   ],
   "env": {
     "NODE_ENV": "production"
+  },
+  "github": {
+    "enabled": true,
+    "autoAlias": false
   }
 }
