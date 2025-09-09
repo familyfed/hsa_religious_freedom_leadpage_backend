@@ -20,16 +20,20 @@ CREATE TABLE public.petitions (
 CREATE TABLE public.signatures (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   petition_id UUID REFERENCES public.petitions(id) ON DELETE CASCADE,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
   email TEXT NOT NULL,
-  full_name TEXT NOT NULL,
-  country TEXT,
+  country TEXT NOT NULL,
+  city TEXT NOT NULL,
+  state TEXT,
   consent_news BOOLEAN DEFAULT false,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'unsubscribed')),
   confirm_token TEXT NOT NULL,
   ip_hash TEXT NOT NULL,
   ua_hash TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  confirmed_at TIMESTAMP WITH TIME ZONE
+  confirmed_at TIMESTAMP WITH TIME ZONE,
+  UNIQUE(email, petition_id)
 );
 
 -- Email log table

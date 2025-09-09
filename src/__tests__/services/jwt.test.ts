@@ -1,9 +1,11 @@
 import { jwtService } from '../../services/jwt';
-import { config } from '../../config';
 
 // Mock the config
 jest.mock('../../config', () => ({
   config: {
+    supabase: {
+      url: 'https://test.supabase.co',
+    },
     security: {
       jwtSecretKey: 'test-jwt-secret-key',
     },
@@ -23,31 +25,30 @@ describe('JWTService', () => {
 
   describe('verifyToken', () => {
     it('should verify a valid token', () => {
-      const token = jwtService.verifyToken('valid-token');
       // Note: In a real test, you'd create a proper JWT token
       // For now, we're testing the structure
       expect(typeof jwtService.verifyToken).toBe('function');
     });
 
-    it('should return null for invalid token', () => {
-      const result = jwtService.verifyToken('invalid-token');
+    it('should return null for invalid token', async () => {
+      const result = await jwtService.verifyToken('invalid-token');
       expect(result).toBeNull();
     });
   });
 
   describe('verifyAuthHeader', () => {
-    it('should return null for missing header', () => {
-      const result = jwtService.verifyAuthHeader(undefined);
+    it('should return null for missing header', async () => {
+      const result = await jwtService.verifyAuthHeader(undefined);
       expect(result).toBeNull();
     });
 
-    it('should return null for malformed header', () => {
-      const result = jwtService.verifyAuthHeader('InvalidHeader');
+    it('should return null for malformed header', async () => {
+      const result = await jwtService.verifyAuthHeader('InvalidHeader');
       expect(result).toBeNull();
     });
 
-    it('should return null for non-Bearer token', () => {
-      const result = jwtService.verifyAuthHeader('Basic token123');
+    it('should return null for non-Bearer token', async () => {
+      const result = await jwtService.verifyAuthHeader('Basic token123');
       expect(result).toBeNull();
     });
   });

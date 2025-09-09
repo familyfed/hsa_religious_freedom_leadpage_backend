@@ -12,9 +12,12 @@ export interface Petition {
 export interface Signature {
   id: string;
   petition_id: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  full_name: string;
-  country?: string;
+  country: string;
+  city: string;
+  state?: string;
   consent_news: boolean;
   status: 'pending' | 'confirmed' | 'unsubscribed';
   confirm_token: string;
@@ -42,10 +45,13 @@ export interface PetitionStats {
 }
 
 export interface SignPetitionRequest {
+  first_name: string;
+  last_name: string;
   email: string;
-  full_name: string;
-  country?: string;
-  consent_news: boolean;
+  country: string;
+  city: string;
+  state?: string;
+  consent_news?: boolean;
   turnstileToken: string;
 }
 

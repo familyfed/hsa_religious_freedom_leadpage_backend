@@ -8,6 +8,7 @@ jest.mock('../../database/supabase', () => ({
     createSignature: jest.fn(),
     getSignatureByEmailAndPetition: jest.fn(),
     getRecentSignaturesByEmail: jest.fn(),
+    getPetitionStats: jest.fn(),
   },
 }));
 
@@ -62,9 +63,12 @@ describe('POST /api/petitions/:slug/sign', () => {
     mockDb.createSignature.mockResolvedValue({
       id: 'signature-1',
       petition_id: 'petition-1',
+      first_name: 'Test',
+      last_name: 'User',
       email: 'test@example.com',
-      full_name: 'Test User',
       country: 'US',
+      city: 'New York',
+      state: 'NY',
       consent_news: true,
       status: 'pending',
       confirm_token: 'test-token',
@@ -80,15 +84,25 @@ describe('POST /api/petitions/:slug/sign', () => {
     const response = await request(app)
       .post('/api/petitions/test-petition/sign')
       .send({
+        first_name: 'Test',
+        last_name: 'User',
         email: 'test@example.com',
-        full_name: 'Test User',
         country: 'US',
+        city: 'New York',
+        state: 'NY',
         consent_news: true,
         turnstileToken: 'test-turnstile-token',
       });
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ ok: true });
+    expect(response.body).toEqual({
+      ok: true,
+      data: {
+        signature_id: 'signature-1',
+        confirm_token: 'test-token',
+        message: 'Please check your email to confirm your signature'
+      }
+    });
     expect(mockDb.createSignature).toHaveBeenCalled();
     expect(mockEmailService.sendConfirmationEmail).toHaveBeenCalled();
   });
@@ -99,9 +113,12 @@ describe('POST /api/petitions/:slug/sign', () => {
     const response = await request(app)
       .post('/api/petitions/non-existent/sign')
       .send({
+        first_name: 'Test',
+        last_name: 'User',
         email: 'test@example.com',
-        full_name: 'Test User',
         country: 'US',
+        city: 'New York',
+        state: 'NY',
         consent_news: true,
         turnstileToken: 'test-turnstile-token',
       });
@@ -111,31 +128,61 @@ describe('POST /api/petitions/:slug/sign', () => {
   });
 
   it('should return 400 for invalid email', async () => {
-    mockSecurityService.validateEmail.mockReturnValue(false);
-
     const response = await request(app)
       .post('/api/petitions/test-petition/sign')
       .send({
+        first_name: 'Test',
+        last_name: 'User',
         email: 'invalid-email',
-        full_name: 'Test User',
         country: 'US',
+        city: 'New York',
+        state: 'NY',
         consent_news: true,
         turnstileToken: 'test-turnstile-token',
       });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ ok: false, error: 'Invalid email format' });
+    expect(response.body).toEqual({ 
+      ok: false, 
+      error: 'Invalid input',
+      details: expect.arrayContaining([
+        expect.objectContaining({
+          path: 'email',
+          msg: 'Valid email is required'
+        })
+      ])
+    });
   });
 
   it('should return 400 for disposable email', async () => {
+    // Reset mocks for this specific test
+    jest.clearAllMocks();
+    
+    // Set up mocks for this test
+    mockDb.getPetitionBySlug.mockResolvedValue({
+      id: 'petition-1',
+      slug: 'test-petition',
+      title: 'Test Petition',
+      goal_count: 1000,
+      is_public: true,
+      created_at: '2025-01-27T00:00:00Z',
+    });
+    
+    mockSecurityService.verifyTurnstileToken.mockResolvedValue(true);
+    mockSecurityService.validateEmail.mockReturnValue(true);
     mockSecurityService.isDisposableEmail.mockReturnValue(true);
+    mockDb.getSignatureByEmailAndPetition.mockResolvedValue(null);
+    mockDb.getRecentSignaturesByEmail.mockResolvedValue(0);
 
     const response = await request(app)
       .post('/api/petitions/test-petition/sign')
       .send({
+        first_name: 'Test',
+        last_name: 'User',
         email: 'test@tempmail.com',
-        full_name: 'Test User',
         country: 'US',
+        city: 'New York',
+        state: 'NY',
         consent_news: true,
         turnstileToken: 'test-turnstile-token',
       });
@@ -145,14 +192,34 @@ describe('POST /api/petitions/:slug/sign', () => {
   });
 
   it('should return 400 for failed Turnstile verification', async () => {
+    // Reset mocks for this specific test
+    jest.clearAllMocks();
+    
+    // Set up mocks for this test
+    mockDb.getPetitionBySlug.mockResolvedValue({
+      id: 'petition-1',
+      slug: 'test-petition',
+      title: 'Test Petition',
+      goal_count: 1000,
+      is_public: true,
+      created_at: '2025-01-27T00:00:00Z',
+    });
+    
     mockSecurityService.verifyTurnstileToken.mockResolvedValue(false);
+    mockSecurityService.validateEmail.mockReturnValue(true);
+    mockSecurityService.isDisposableEmail.mockReturnValue(false);
+    mockDb.getSignatureByEmailAndPetition.mockResolvedValue(null);
+    mockDb.getRecentSignaturesByEmail.mockResolvedValue(0);
 
     const response = await request(app)
       .post('/api/petitions/test-petition/sign')
       .send({
+        first_name: 'Test',
+        last_name: 'User',
         email: 'test@example.com',
-        full_name: 'Test User',
         country: 'US',
+        city: 'New York',
+        state: 'NY',
         consent_news: true,
         turnstileToken: 'invalid-token',
       });
@@ -161,13 +228,32 @@ describe('POST /api/petitions/:slug/sign', () => {
     expect(response.body).toEqual({ ok: false, error: 'Bot check failed' });
   });
 
-  it('should return 409 for duplicate pending signature', async () => {
+  it('should return 409 for duplicate signature', async () => {
+    // Reset mocks for this specific test
+    jest.clearAllMocks();
+    
+    // Set up mocks for this test
+    mockDb.getPetitionBySlug.mockResolvedValue({
+      id: 'petition-1',
+      slug: 'test-petition',
+      title: 'Test Petition',
+      goal_count: 1000,
+      is_public: true,
+      created_at: '2025-01-27T00:00:00Z',
+    });
+    
+    mockSecurityService.verifyTurnstileToken.mockResolvedValue(true);
+    mockSecurityService.validateEmail.mockReturnValue(true);
+    mockSecurityService.isDisposableEmail.mockReturnValue(false);
     mockDb.getSignatureByEmailAndPetition.mockResolvedValue({
       id: 'existing-signature',
       petition_id: 'petition-1',
+      first_name: 'Test',
+      last_name: 'User',
       email: 'test@example.com',
-      full_name: 'Test User',
       country: 'US',
+      city: 'New York',
+      state: 'NY',
       consent_news: true,
       status: 'pending',
       confirm_token: 'existing-token',
@@ -175,19 +261,23 @@ describe('POST /api/petitions/:slug/sign', () => {
       ua_hash: 'hashed-ua',
       created_at: '2025-01-27T00:00:00Z',
     });
+    mockDb.getRecentSignaturesByEmail.mockResolvedValue(0);
 
     const response = await request(app)
       .post('/api/petitions/test-petition/sign')
       .send({
+        first_name: 'Test',
+        last_name: 'User',
         email: 'test@example.com',
-        full_name: 'Test User',
         country: 'US',
+        city: 'New York',
+        state: 'NY',
         consent_news: true,
         turnstileToken: 'test-turnstile-token',
       });
 
     expect(response.status).toBe(409);
-    expect(response.body).toEqual({ ok: false, error: 'Duplicate pending' });
+    expect(response.body).toEqual({ ok: false, error: 'Email already signed this petition' });
   });
 
   it('should return 429 for rate limit exceeded', async () => {
@@ -196,9 +286,12 @@ describe('POST /api/petitions/:slug/sign', () => {
     const response = await request(app)
       .post('/api/petitions/test-petition/sign')
       .send({
+        first_name: 'Test',
+        last_name: 'User',
         email: 'test@example.com',
-        full_name: 'Test User',
         country: 'US',
+        city: 'New York',
+        state: 'NY',
         consent_news: true,
         turnstileToken: 'test-turnstile-token',
       });

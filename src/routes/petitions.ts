@@ -28,6 +28,7 @@ router.post('/:slug/sign',
           ok: false,
           error: 'Petition not found'
         });
+        return;
       }
 
       // Validate email format and check for disposable emails
@@ -36,6 +37,7 @@ router.post('/:slug/sign',
           ok: false,
           error: 'Invalid email format'
         });
+        return;
       }
 
       if (securityService.isDisposableEmail(body.email)) {
@@ -43,6 +45,7 @@ router.post('/:slug/sign',
           ok: false,
           error: 'Disposable email addresses are not allowed'
         });
+        return;
       }
 
       // Verify Turnstile token
@@ -52,15 +55,17 @@ router.post('/:slug/sign',
           ok: false,
           error: 'Bot check failed'
         });
+        return;
       }
 
-      // Check for existing pending signature
+      // Check for existing signature (any status)
       const existingSignature = await db.getSignatureByEmailAndPetition(body.email, petition!.id);
       if (existingSignature) {
         res.status(409).json({
           ok: false,
-          error: 'Duplicate pending'
+          error: 'Email already signed this petition'
         });
+        return;
       }
 
       // Check rate limiting
@@ -74,6 +79,7 @@ router.post('/:slug/sign',
           ok: false,
           error: 'Rate limited'
         });
+        return;
       }
 
       // Create signature
@@ -83,10 +89,13 @@ router.post('/:slug/sign',
 
       const signature = await db.createSignature({
         petition_id: petition!.id,
+        first_name: body.first_name,
+        last_name: body.last_name,
         email: body.email,
-        full_name: body.full_name,
-        country: body.country || undefined,
-        consent_news: body.consent_news,
+        country: body.country,
+        city: body.city,
+        state: body.state,
+        consent_news: body.consent_news || false,
         status: 'pending',
         confirm_token: confirmToken,
         ip_hash: ipHash,
@@ -96,7 +105,7 @@ router.post('/:slug/sign',
       // Send confirmation email
       const emailSent = await emailService.sendConfirmationEmail(
         body.email,
-        body.full_name,
+        `${body.first_name} ${body.last_name}`,
         petition!.slug,
         confirmToken
       );
@@ -114,7 +123,14 @@ router.post('/:slug/sign',
         petitionSlug: petition!.slug 
       });
 
-      res.status(200).json({ ok: true });
+      res.status(200).json({
+        ok: true,
+        data: {
+          signature_id: signature.id,
+          confirm_token: confirmToken,
+          message: 'Please check your email to confirm your signature'
+        }
+      });
 
     } catch (error) {
       logger.error('Error creating signature', { error, slug: req.params.slug });
@@ -137,6 +153,7 @@ router.get('/:slug/stats', async (req: Request, res: Response): Promise<void> =>
         ok: false,
         error: 'Petition not found'
       });
+      return;
     }
 
     res.status(200).json({

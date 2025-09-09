@@ -2,25 +2,50 @@ import { body, validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
 import { SignPetitionRequest } from '../types';
 
+// Valid country codes from the frontend
+const VALID_COUNTRY_CODES = [
+  'US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CH', 'AT', 'SE', 'NO', 'DK', 'FI', 'IE', 'PT', 'GR', 'PL', 'CZ', 'HU', 'RO', 'BG', 'HR', 'SI', 'SK', 'LT', 'LV', 'EE', 'JP', 'KR', 'CN', 'IN', 'SG', 'HK', 'TW', 'TH', 'MY', 'ID', 'PH', 'VN', 'BR', 'AR', 'CL', 'CO', 'MX', 'PE', 'ZA', 'EG', 'NG', 'KE', 'MA', 'TN', 'DZ', 'IL', 'AE', 'SA', 'TR', 'RU', 'UA', 'BY', 'KZ', 'UZ', 'NZ', 'FJ', 'PG', 'Other'
+];
+
 export const validateSignPetition = [
+  body('first_name')
+    .isLength({ min: 2, max: 50 })
+    .trim()
+    .escape()
+    .withMessage('First name is required and must be 2-50 characters'),
+  
+  body('last_name')
+    .isLength({ min: 2, max: 50 })
+    .trim()
+    .escape()
+    .withMessage('Last name is required and must be 2-50 characters'),
+  
   body('email')
     .isEmail()
     .normalizeEmail()
     .withMessage('Valid email is required'),
   
-  body('full_name')
-    .isLength({ min: 1, max: 100 })
-    .trim()
-    .escape()
-    .withMessage('Full name is required and must be less than 100 characters'),
-  
   body('country')
-    .optional()
     .isLength({ min: 2, max: 2 })
     .isUppercase()
-    .withMessage('Country must be a 2-letter country code'),
+    .isIn(VALID_COUNTRY_CODES)
+    .withMessage('Country must be a valid 2-letter country code'),
+  
+  body('city')
+    .isLength({ min: 2, max: 100 })
+    .trim()
+    .escape()
+    .withMessage('City is required and must be 2-100 characters'),
+  
+  body('state')
+    .optional()
+    .isLength({ min: 2, max: 50 })
+    .trim()
+    .escape()
+    .withMessage('State must be 2-50 characters if provided'),
   
   body('consent_news')
+    .optional()
     .isBoolean()
     .withMessage('Consent news must be a boolean'),
   
@@ -82,8 +107,11 @@ export const sanitizeSignPetitionRequest = (req: Request, _res: Response, next: 
   const body = req.body as SignPetitionRequest;
   
   // Sanitize inputs
-  body.full_name = body.full_name?.trim().replace(/[<>]/g, '') || '';
-  body.country = body.country?.trim().toUpperCase() || undefined;
+  body.first_name = body.first_name?.trim().replace(/[<>]/g, '') || '';
+  body.last_name = body.last_name?.trim().replace(/[<>]/g, '') || '';
+  body.country = body.country?.trim().toUpperCase() || '';
+  body.city = body.city?.trim().replace(/[<>]/g, '') || '';
+  body.state = body.state?.trim().replace(/[<>]/g, '') || undefined;
   
   req.body = body;
   next();

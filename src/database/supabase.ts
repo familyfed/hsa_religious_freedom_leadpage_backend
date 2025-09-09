@@ -49,7 +49,6 @@ export class DatabaseService {
       .select('*')
       .eq('email', email)
       .eq('petition_id', petitionId)
-      .eq('status', 'pending')
       .single();
 
     if (error) {

@@ -31,7 +31,7 @@ router.get('/', async (req: Request, res: Response) => {
       // Send thank you email
       const emailSent = await emailService.sendThankYouEmail(
         signature.email,
-        signature.full_name,
+        `${signature.first_name} ${signature.last_name}`,
         petition.slug
       );
 

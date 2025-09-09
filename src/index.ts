@@ -27,25 +27,27 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
-  message: {
-    ok: false,
-    error: 'Rate limited'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  keyGenerator: (req) => {
-    // Use IP + User-Agent for more granular rate limiting
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const ua = req.get('User-Agent') || '';
-    return `${ip}-${ua}`;
-  },
-});
+// Rate limiting (disabled in test mode)
+if (config.nodeEnv !== 'test') {
+  const limiter = rateLimit({
+    windowMs: config.rateLimit.windowMs,
+    max: config.rateLimit.maxRequests,
+    message: {
+      ok: false,
+      error: 'Rate limited'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      // Use IP + User-Agent for more granular rate limiting
+      const ip = req.ip || req.connection.remoteAddress || 'unknown';
+      const ua = req.get('User-Agent') || '';
+      return `${ip}-${ua}`;
+    },
+  });
 
-app.use('/api/petitions', limiter);
+  app.use('/api/petitions', limiter);
+}
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
