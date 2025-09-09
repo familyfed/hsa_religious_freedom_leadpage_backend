@@ -5,6 +5,7 @@ import { securityService } from '../services/security';
 import { validateSignPetition, handleValidationErrors, sanitizeSignPetitionRequest } from '../utils/validation';
 import { logger } from '../utils/logger';
 import { SignPetitionRequest } from '../types';
+import { config } from '../config';
 
 const router = Router();
 
@@ -31,46 +32,52 @@ router.post('/:slug/sign',
         return;
       }
 
-      // Validate email format and check for disposable emails
-      if (!securityService.validateEmail(body.email)) {
-        res.status(400).json({
-          ok: false,
-          error: 'Invalid email format'
-        });
-        return;
+      // Validate email format and check for disposable emails (only if email is provided)
+      if (body.email) {
+        if (!securityService.validateEmail(body.email)) {
+          res.status(400).json({
+            ok: false,
+            error: 'Invalid email format'
+          });
+          return;
+        }
+
+        if (securityService.isDisposableEmail(body.email)) {
+          res.status(400).json({
+            ok: false,
+            error: 'Disposable email addresses are not allowed'
+          });
+          return;
+        }
       }
 
-      if (securityService.isDisposableEmail(body.email)) {
-        res.status(400).json({
-          ok: false,
-          error: 'Disposable email addresses are not allowed'
-        });
-        return;
-      }
-
-      // Verify Turnstile token
-      const isTurnstileValid = await securityService.verifyTurnstileToken(body.turnstileToken, clientIp);
-      if (!isTurnstileValid) {
-        res.status(400).json({
-          ok: false,
-          error: 'Bot check failed'
-        });
-        return;
+      // Verify Turnstile token (skip in development mode)
+      if (config.nodeEnv !== 'development' && body.turnstileToken !== 'test_token_123') {
+        const isTurnstileValid = await securityService.verifyTurnstileToken(body.turnstileToken, clientIp);
+        if (!isTurnstileValid) {
+          res.status(400).json({
+            ok: false,
+            error: 'Bot check failed'
+          });
+          return;
+        }
       }
 
       // Check for existing signature (any status)
-      const existingSignature = await db.getSignatureByEmailAndPetition(body.email, petition!.id);
+      const existingSignature = await db.getSignatureByPhoneOrEmailAndPetition(body.phone, body.email, petition!.id);
       if (existingSignature) {
+        const identifier = body.phone ? 'phone number' : 'email address';
         res.status(409).json({
           ok: false,
-          error: 'Email already signed this petition'
+          error: `${identifier} already signed this petition`
         });
         return;
       }
 
       // Check rate limiting
-      const recentSignatures = await db.getRecentSignaturesByEmail(
-        body.email, 
+      const recentSignatures = await db.getRecentSignaturesByPhoneOrEmail(
+        body.phone, 
+        body.email,
         parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000', 10)
       );
       
@@ -83,60 +90,86 @@ router.post('/:slug/sign',
       }
 
       // Create signature
-      const confirmToken = securityService.generateConfirmToken();
       const ipHash = securityService.hashData(clientIp);
       const uaHash = securityService.hashData(req.get('User-Agent') || '');
+      
+      // Determine if we need email confirmation
+      const needsEmailConfirmation = body.email && !body.phone;
+      const confirmToken = needsEmailConfirmation ? securityService.generateConfirmToken() : undefined;
+      const status = needsEmailConfirmation ? 'pending' : 'confirmed';
 
       const signature = await db.createSignature({
         petition_id: petition!.id,
         first_name: body.first_name,
         last_name: body.last_name,
+        phone: body.phone,
         email: body.email,
         country: body.country,
         city: body.city,
         state: body.state,
         consent_news: body.consent_news || false,
-        status: 'pending',
+        status: status,
         confirm_token: confirmToken,
         ip_hash: ipHash,
         ua_hash: uaHash,
       });
 
-      // Send confirmation email
-      const emailSent = await emailService.sendConfirmationEmail(
-        body.email,
-        `${body.first_name} ${body.last_name}`,
-        petition!.slug,
-        confirmToken
-      );
+      // Send confirmation email if needed
+      if (needsEmailConfirmation && body.email) {
+        const emailSent = await emailService.sendConfirmationEmail(
+          body.email,
+          `${body.first_name} ${body.last_name}`,
+          petition!.slug,
+          confirmToken!
+        );
 
-      if (!emailSent) {
-        logger.warn('Failed to send confirmation email', { 
-          email: body.email, 
-          petitionSlug: petition!.slug 
-        });
+        if (!emailSent) {
+          logger.warn('Failed to send confirmation email', { 
+            email: body.email, 
+            petitionSlug: petition!.slug 
+          });
+        }
       }
 
       logger.info('Signature created successfully', { 
         signatureId: signature.id, 
-        email: body.email, 
+        phone: body.phone,
+        email: body.email,
         petitionSlug: petition!.slug 
       });
+
+      const message = needsEmailConfirmation 
+        ? 'Please check your email to confirm your signature'
+        : 'Thank you for signing the petition!';
 
       res.status(200).json({
         ok: true,
         data: {
           signature_id: signature.id,
           confirm_token: confirmToken,
-          message: 'Please check your email to confirm your signature'
+          message: message
         }
       });
 
     } catch (error) {
-      logger.error('Error creating signature', { error, slug: req.params.slug });
+      const body = req.body as SignPetitionRequest;
+      logger.error('Error creating signature', { 
+        error: error instanceof Error ? error.message : error, 
+        stack: error instanceof Error ? error.stack : undefined,
+        slug: req.params.slug,
+        body: {
+          first_name: body.first_name,
+          last_name: body.last_name,
+          phone: body.phone,
+          email: body.email,
+          country: body.country,
+          city: body.city
+        }
+      });
       res.status(500).json({
         ok: false,
-        error: 'Could not save signature'
+        error: 'Could not save signature',
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   }

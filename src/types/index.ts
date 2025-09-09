@@ -14,13 +14,14 @@ export interface Signature {
   petition_id: string;
   first_name: string;
   last_name: string;
-  email: string;
+  phone?: string;
+  email?: string;
   country: string;
   city: string;
   state?: string;
   consent_news: boolean;
   status: 'pending' | 'confirmed' | 'unsubscribed';
-  confirm_token: string;
+  confirm_token?: string;
   ip_hash: string;
   ua_hash: string;
   created_at: string;
@@ -47,7 +48,8 @@ export interface PetitionStats {
 export interface SignPetitionRequest {
   first_name: string;
   last_name: string;
-  email: string;
+  phone?: string;
+  email?: string;
   country: string;
   city: string;
   state?: string;

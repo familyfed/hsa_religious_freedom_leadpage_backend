@@ -13,8 +13,9 @@ export const config = {
   // CORS origins - support multiple frontend domains including stable Vercel subdomains
   corsOrigins: [
     process.env.APP_ORIGIN || 'http://localhost:3000',
-    'https://hsa-petitions.vercel.app', // NEW: Stable frontend domain
-    'https://hsa-petitions-api.vercel.app', // NEW: Stable backend domain
+    'https://petition.motherofpeace.com', // NEW: Official petition domain
+    'https://hsa-petitions.vercel.app', // Stable frontend domain
+    'https://hsa-petitions-api.vercel.app', // Stable backend domain
     'https://religiousfreedom.vercel.app', // Original domain
     'https://hsa-religious-freedom-leadpage-frontend.vercel.app', // Production domain
     'https://hsa-religious-freedom-leadpage-fron-sandy.vercel.app', // Current frontend

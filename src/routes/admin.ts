@@ -25,9 +25,9 @@ router.get('/signatures.csv', async (req: Request, res: Response): Promise<void>
     const signatures = await db.getSignaturesByPetition(petition as string);
 
     // Generate CSV
-    const csvHeader = 'first_name,last_name,email,country,city,state,status,created_at,confirmed_at\n';
+    const csvHeader = 'first_name,last_name,phone,email,country,city,state,status,created_at,confirmed_at\n';
     const csvRows = signatures.map(sig => 
-      `"${sig.first_name}","${sig.last_name}","${sig.email}","${sig.country}","${sig.city}","${sig.state || ''}","${sig.status}","${sig.created_at}","${sig.confirmed_at || ''}"`
+      `"${sig.first_name}","${sig.last_name}","${sig.phone || ''}","${sig.email || ''}","${sig.country}","${sig.city}","${sig.state || ''}","${sig.status}","${sig.created_at}","${sig.confirmed_at || ''}"`
     ).join('\n');
 
     const csv = csvHeader + csvRows;

@@ -43,6 +43,22 @@ export class DatabaseService {
     return data;
   }
 
+  async getSignatureByPhoneAndPetition(phone: string, petitionId: string): Promise<Signature | null> {
+    const { data, error } = await supabase
+      .from('signatures')
+      .select('*')
+      .eq('phone', phone)
+      .eq('petition_id', petitionId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+
+    return data;
+  }
+
   async getSignatureByEmailAndPetition(email: string, petitionId: string): Promise<Signature | null> {
     const { data, error } = await supabase
       .from('signatures')
@@ -57,6 +73,20 @@ export class DatabaseService {
     }
 
     return data;
+  }
+
+  async getSignatureByPhoneOrEmailAndPetition(phone: string | undefined, email: string | undefined, petitionId: string): Promise<Signature | null> {
+    if (phone) {
+      const phoneResult = await this.getSignatureByPhoneAndPetition(phone, petitionId);
+      if (phoneResult) return phoneResult;
+    }
+    
+    if (email) {
+      const emailResult = await this.getSignatureByEmailAndPetition(email, petitionId);
+      if (emailResult) return emailResult;
+    }
+    
+    return null;
   }
 
   async confirmSignature(token: string): Promise<Signature | null> {
@@ -123,6 +153,20 @@ export class DatabaseService {
   }
 
   // Rate limiting
+  async getRecentSignaturesByPhone(phone: string, windowMs: number): Promise<number> {
+    const since = new Date(Date.now() - windowMs).toISOString();
+    
+    const { count, error } = await supabase
+      .from('signatures')
+      .select('*', { count: 'exact', head: true })
+      .eq('phone', phone)
+      .eq('status', 'confirmed')
+      .gte('created_at', since);
+
+    if (error) throw error;
+    return count || 0;
+  }
+
   async getRecentSignaturesByEmail(email: string, windowMs: number): Promise<number> {
     const since = new Date(Date.now() - windowMs).toISOString();
     
@@ -130,11 +174,26 @@ export class DatabaseService {
       .from('signatures')
       .select('*', { count: 'exact', head: true })
       .eq('email', email)
-      .eq('status', 'pending')
+      .eq('status', 'confirmed')
       .gte('created_at', since);
 
     if (error) throw error;
     return count || 0;
+  }
+
+  async getRecentSignaturesByPhoneOrEmail(phone: string | undefined, email: string | undefined, windowMs: number): Promise<number> {
+    let phoneCount = 0;
+    let emailCount = 0;
+    
+    if (phone) {
+      phoneCount = await this.getRecentSignaturesByPhone(phone, windowMs);
+    }
+    
+    if (email) {
+      emailCount = await this.getRecentSignaturesByEmail(email, windowMs);
+    }
+    
+    return phoneCount + emailCount;
   }
 }
 

@@ -20,7 +20,24 @@ export const validateSignPetition = [
     .escape()
     .withMessage('Last name is required and must be 2-50 characters'),
   
+  body('phone')
+    .optional()
+    .isLength({ min: 10, max: 20 })
+    .custom((value) => {
+      if (!value) return true; // Optional field
+      // Remove all non-digit characters except +
+      const digitsOnly = value.replace(/[^\d\+]/g, '');
+      // Check if it has 10+ digits
+      const digitCount = digitsOnly.replace(/\+/g, '').length;
+      if (digitCount < 10) {
+        throw new Error('Phone number must have at least 10 digits');
+      }
+      return true;
+    })
+    .withMessage('Valid phone number is required (10+ digits)'),
+  
   body('email')
+    .optional()
     .isEmail()
     .normalizeEmail()
     .withMessage('Valid email is required'),
@@ -52,6 +69,14 @@ export const validateSignPetition = [
   body('turnstileToken')
     .notEmpty()
     .withMessage('Turnstile token is required'),
+  
+  // Custom validation to ensure at least one of phone or email is provided
+  body().custom((body) => {
+    if (!body.phone && !body.email) {
+      throw new Error('Either phone number or email address is required');
+    }
+    return true;
+  }),
 ];
 
 export const validateAdminApiKey = (req: Request, res: Response, next: NextFunction): void => {
@@ -109,6 +134,14 @@ export const sanitizeSignPetitionRequest = (req: Request, _res: Response, next: 
   // Sanitize inputs
   body.first_name = body.first_name?.trim().replace(/[<>]/g, '') || '';
   body.last_name = body.last_name?.trim().replace(/[<>]/g, '') || '';
+  // Normalize phone number - remove all non-digit characters except +
+  if (body.phone) {
+    body.phone = body.phone.trim().replace(/[^\d\+]/g, '');
+  }
+  // Normalize email
+  if (body.email) {
+    body.email = body.email.trim().toLowerCase();
+  }
   body.country = body.country?.trim().toUpperCase() || '';
   body.city = body.city?.trim().replace(/[<>]/g, '') || '';
   body.state = body.state?.trim().replace(/[<>]/g, '') || undefined;

@@ -22,18 +22,21 @@ CREATE TABLE public.signatures (
   petition_id UUID REFERENCES public.petitions(id) ON DELETE CASCADE,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
-  email TEXT NOT NULL,
+  phone TEXT,
+  email TEXT,
   country TEXT NOT NULL,
   city TEXT NOT NULL,
   state TEXT,
   consent_news BOOLEAN DEFAULT false,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'unsubscribed')),
-  confirm_token TEXT NOT NULL,
+  confirm_token TEXT,
   ip_hash TEXT NOT NULL,
   ua_hash TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   confirmed_at TIMESTAMP WITH TIME ZONE,
-  UNIQUE(email, petition_id)
+  CONSTRAINT phone_or_email_required CHECK (phone IS NOT NULL OR email IS NOT NULL),
+  CONSTRAINT unique_phone_per_petition UNIQUE(phone, petition_id) WHERE phone IS NOT NULL,
+  CONSTRAINT unique_email_per_petition UNIQUE(email, petition_id) WHERE email IS NOT NULL
 );
 
 -- Email log table
