@@ -94,4 +94,113 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/confirm/resend
+// Resend confirmation email for pending signatures
+router.post('/resend', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email || typeof email !== 'string') {
+      res.status(400).json({
+        ok: false,
+        error: 'Email address is required'
+      });
+      return;
+    }
+
+    logger.info('Resend confirmation request', { email });
+
+    // Find pending signature by email
+    const signature = await db.getSignatureByEmailAndPetition(email, 'petition-for-the-mother-of-peace');
+    
+    if (!signature) {
+      logger.warn('No pending signature found for resend', { email });
+      res.status(404).json({
+        ok: false,
+        error: 'No pending signature found for this email address'
+      });
+      return;
+    }
+
+    if (signature.status !== 'pending') {
+      logger.warn('Signature is not pending, cannot resend', { 
+        email, 
+        status: signature.status 
+      });
+      res.status(400).json({
+        ok: false,
+        error: 'Signature is already confirmed or not pending'
+      });
+      return;
+    }
+
+    // Check if token is expired (24 hours)
+    const tokenAge = Date.now() - new Date(signature.created_at).getTime();
+    const maxAge = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    
+    if (tokenAge > maxAge) {
+      logger.warn('Confirm token expired, cannot resend', { 
+        email,
+        age: Math.round(tokenAge / (60 * 60 * 1000)) + ' hours' 
+      });
+      res.status(400).json({
+        ok: false,
+        error: 'Confirmation token has expired. Please sign the petition again.'
+      });
+      return;
+    }
+
+    // Resend confirmation email
+    if (signature.confirm_token) {
+      try {
+        await emailService.sendConfirmationEmail(
+          signature.email!,
+          `${signature.first_name} ${signature.last_name}`,
+          'petition-for-the-mother-of-peace',
+          signature.confirm_token
+        );
+        
+        logger.info('Confirmation email resent successfully', { 
+          email,
+          signatureId: signature.id 
+        });
+        
+        res.status(200).json({
+          ok: true,
+          message: 'Confirmation email has been resent. Please check your inbox.'
+        });
+        return;
+      } catch (error) {
+        logger.error('Failed to resend confirmation email', { 
+          error, 
+          email,
+          signatureId: signature.id 
+        });
+        res.status(500).json({
+          ok: false,
+          error: 'Failed to resend confirmation email. Please try again later.'
+        });
+        return;
+      }
+    } else {
+      logger.error('No confirm token found for signature', { 
+        email,
+        signatureId: signature.id 
+      });
+      res.status(500).json({
+        ok: false,
+        error: 'No confirmation token found. Please sign the petition again.'
+      });
+      return;
+    }
+
+  } catch (error) {
+    logger.error('Error in resend route', { error });
+    res.status(500).json({
+      ok: false,
+      error: 'Internal server error. Please try again later.'
+    });
+  }
+});
+
 export default router;
