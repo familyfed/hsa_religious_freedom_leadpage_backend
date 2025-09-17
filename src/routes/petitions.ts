@@ -51,16 +51,22 @@ router.post('/:slug/sign',
         }
       }
 
-      // Verify Turnstile token (skip in development mode)
-      if (config.nodeEnv !== 'development' && body.turnstileToken !== 'test_token_123') {
+      // Verify Turnstile token (skip only for test token in development)
+      if (body.turnstileToken !== 'test_token_123' || config.nodeEnv === 'production') {
         const isTurnstileValid = await securityService.verifyTurnstileToken(body.turnstileToken, clientIp);
         if (!isTurnstileValid) {
+          logger.warn('Turnstile verification failed', { 
+            token: body.turnstileToken?.substring(0, 10) + '...',
+            ip: clientIp,
+            environment: config.nodeEnv
+          });
           res.status(400).json({
             ok: false,
             error: 'Bot check failed'
           });
           return;
         }
+        logger.info('Turnstile verification successful', { ip: clientIp });
       }
 
       // Check for existing signature (any status)

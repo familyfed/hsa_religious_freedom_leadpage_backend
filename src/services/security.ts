@@ -5,6 +5,18 @@ import { logger } from '../utils/logger';
 export class SecurityService {
   async verifyTurnstileToken(token: string, ip: string): Promise<boolean> {
     try {
+      // Check if secret key is configured
+      if (!config.security.turnstile.secretKey) {
+        logger.error('Turnstile secret key not configured');
+        return false;
+      }
+
+      // Check if token is provided
+      if (!token || token.trim() === '') {
+        logger.warn('Turnstile token is empty or missing', { ip });
+        return false;
+      }
+
       const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
         method: 'POST',
         headers: {
@@ -17,13 +29,23 @@ export class SecurityService {
         }),
       });
 
+      if (!response.ok) {
+        logger.error('Turnstile verification request failed', { 
+          status: response.status,
+          statusText: response.statusText,
+          ip 
+        });
+        return false;
+      }
+
       const result = await response.json() as any;
       
       if (!result.success) {
         logger.warn('Turnstile verification failed', { 
           token: token.substring(0, 10) + '...',
           ip,
-          errors: result['error-codes']
+          errors: result['error-codes'],
+          success: result.success
         });
         return false;
       }
@@ -31,7 +53,7 @@ export class SecurityService {
       logger.info('Turnstile verification successful', { ip });
       return true;
     } catch (error) {
-      logger.error('Error verifying Turnstile token', { error, ip });
+      logger.error('Error verifying Turnstile token', { error: error instanceof Error ? error.message : String(error), ip });
       return false;
     }
   }
