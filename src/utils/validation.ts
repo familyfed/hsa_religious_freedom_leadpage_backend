@@ -80,6 +80,10 @@ export const validateSignPetition = [
     .isBoolean()
     .withMessage('Consent news must be a boolean'),
   
+  body('language')
+    .isIn(['en', 'ko', 'ja', 'es', 'zh', 'fr'])
+    .withMessage('Language must be one of: en, ko, ja, es, zh, fr'),
+  
   body('turnstileToken')
     .optional()
     .isString()
@@ -161,6 +165,7 @@ export const sanitizeSignPetitionRequest = (req: Request, _res: Response, next: 
   body.city = body.city?.trim().replace(/[<>]/g, '') || '';
   body.state = body.state?.trim().replace(/[<>]/g, '') || undefined;
   body.postal_code = body.postal_code?.trim().replace(/[<>]/g, '') || undefined;
+  body.language = body.language?.trim().toLowerCase() || 'en';
   
   req.body = body;
   next();

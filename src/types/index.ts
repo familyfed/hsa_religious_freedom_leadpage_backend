@@ -20,6 +20,7 @@ export interface Signature {
   city: string;
   state?: string;
   postal_code?: string; // Added postal code field
+  language: string; // NEW: Language field for form submission
   consent_news: boolean;
   status: 'pending' | 'confirmed' | 'unsubscribed';
   confirm_token?: string;
@@ -68,6 +69,7 @@ export interface SignPetitionRequest {
   state?: string;
   postal_code?: string; // Added postal code field
   consent_news?: boolean;
+  language: string; // NEW: Language field for form submission
   turnstileToken: string;
 }
 

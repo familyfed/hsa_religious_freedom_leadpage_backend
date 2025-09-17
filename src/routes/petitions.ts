@@ -107,11 +107,9 @@ router.post('/:slug/sign',
       const ipHash = securityService.hashData(clientIp);
       const uaHash = securityService.hashData(req.get('User-Agent') || '');
       
-      // Determine if we need email confirmation
-      // Since email is now required, we need confirmation unless phone is also provided
-      const needsEmailConfirmation = !body.phone; // If no phone provided, need email confirmation
-      const confirmToken = needsEmailConfirmation ? securityService.generateConfirmToken() : undefined;
-      const status = needsEmailConfirmation ? 'pending' : 'confirmed';
+      // All signatures are immediately confirmed - no email confirmation needed
+      const status = 'confirmed';
+      const confirmToken = undefined; // No confirmation token needed
 
       const signature = await db.createSignature({
         petition_id: petition!.id,
@@ -123,6 +121,7 @@ router.post('/:slug/sign',
         city: body.city,
         state: body.state,
         postal_code: body.postal_code,
+        language: body.language,
         consent_news: body.consent_news || false,
         status: status,
         confirm_token: confirmToken,
@@ -130,20 +129,25 @@ router.post('/:slug/sign',
         ua_hash: uaHash,
       });
 
-      // Send confirmation email if needed
-      if (needsEmailConfirmation && body.email) {
-        const emailSent = await emailService.sendConfirmationEmail(
-          body.email,
-          `${body.first_name} ${body.last_name}`,
-          petition!.slug,
-          confirmToken!
-        );
-
-        if (!emailSent) {
-          logger.warn('Failed to send confirmation email', { 
+      // Send welcome email (no confirmation needed)
+      if (body.email) {
+        try {
+          await emailService.sendThankYouEmail(
+            body.email,
+            `${body.first_name} ${body.last_name}`,
+            petition!.slug
+          );
+          logger.info('Welcome email sent successfully', { 
             email: body.email, 
             petitionSlug: petition!.slug 
           });
+        } catch (error) {
+          logger.warn('Failed to send welcome email', { 
+            error,
+            email: body.email, 
+            petitionSlug: petition!.slug 
+          });
+          // Don't fail the signature if email fails
         }
       }
 
@@ -154,15 +158,12 @@ router.post('/:slug/sign',
         petitionSlug: petition!.slug 
       });
 
-      const message = needsEmailConfirmation 
-        ? 'Please check your email to confirm your signature'
-        : 'Thank you for signing the petition!';
+      const message = 'Thank you for signing the petition!';
 
       res.status(200).json({
         ok: true,
         data: {
           signature_id: signature.id,
-          confirm_token: confirmToken,
           message: message
         }
       });
