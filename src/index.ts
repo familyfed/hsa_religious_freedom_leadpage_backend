@@ -49,8 +49,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
 }));
 
-// Rate limiting (disabled in test mode)
-if (config.nodeEnv !== 'test') {
+// Rate limiting (disabled in test mode and staging for development)
+if (config.nodeEnv !== 'test' && config.nodeEnv !== 'development') {
   const limiter = rateLimit({
     windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.maxRequests,
