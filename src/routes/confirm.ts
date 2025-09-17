@@ -2,18 +2,24 @@ import { Router, Request, Response } from 'express';
 import { logger } from '../utils/logger';
 import { db } from '../database/supabase';
 import { emailService } from '../services/email';
+import { config } from '../config';
 
 const router = Router();
 
 // GET /api/confirm?token=...
 // Handle email confirmation for email-based signatures
 router.get('/', async (req: Request, res: Response) => {
+  // Determine frontend URL based on environment
+  const frontendUrl = config.nodeEnv === 'production' 
+    ? 'https://petition.motherofpeace.com'
+    : 'https://staging.petition.motherofpeace.com';
+    
   try {
     const { token } = req.query;
     
     if (!token || typeof token !== 'string') {
       logger.warn('Confirm route accessed without token');
-      res.redirect('https://staging.petition.motherofpeace.com/thank-you?error=invalid_token');
+      res.redirect(`${frontendUrl}/thank-you?error=invalid_token`);
       return;
     }
 
@@ -24,13 +30,13 @@ router.get('/', async (req: Request, res: Response) => {
     
     if (!signature) {
       logger.warn('Invalid confirm token', { token: token.substring(0, 10) + '...' });
-      res.redirect('https://staging.petition.motherofpeace.com/thank-you?error=invalid_token');
+      res.redirect(`${frontendUrl}/thank-you?error=invalid_token`);
       return;
     }
 
     if (signature.status === 'confirmed') {
       logger.info('Signature already confirmed', { signatureId: signature.id });
-      res.redirect('https://staging.petition.motherofpeace.com/thank-you?already_confirmed=true');
+      res.redirect(`${frontendUrl}/thank-you?already_confirmed=true`);
       return;
     }
 
@@ -43,7 +49,7 @@ router.get('/', async (req: Request, res: Response) => {
         signatureId: signature.id, 
         age: Math.round(tokenAge / (60 * 60 * 1000)) + ' hours' 
       });
-      res.redirect('https://staging.petition.motherofpeace.com/thank-you?error=expired_token');
+      res.redirect(`${frontendUrl}/thank-you?error=expired_token`);
       return;
     }
 
@@ -52,7 +58,7 @@ router.get('/', async (req: Request, res: Response) => {
     
     if (!confirmed) {
       logger.error('Failed to confirm signature', { signatureId: signature.id });
-      res.redirect('https://staging.petition.motherofpeace.com/thank-you?error=confirmation_failed');
+      res.redirect(`${frontendUrl}/thank-you?error=confirmation_failed`);
       return;
     }
 
@@ -80,11 +86,11 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     // Redirect to frontend thank you page
-    res.redirect('https://staging.petition.motherofpeace.com/thank-you?confirmed=true');
+    res.redirect(`${frontendUrl}/thank-you?confirmed=true`);
 
   } catch (error) {
     logger.error('Error in confirm route', { error });
-    res.redirect('https://staging.petition.motherofpeace.com/thank-you?error=server_error');
+    res.redirect(`${frontendUrl}/thank-you?error=server_error`);
   }
 });
 
