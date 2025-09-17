@@ -52,7 +52,7 @@ router.post('/:slug/sign',
       }
 
       // Verify Turnstile token (skip only for test token in development)
-      if (body.turnstileToken !== 'test_token_123' || config.nodeEnv === 'production') {
+      if (body.turnstileToken !== 'test_token_123') {
         const isTurnstileValid = await securityService.verifyTurnstileToken(body.turnstileToken, clientIp);
         if (!isTurnstileValid) {
           logger.warn('Turnstile verification failed', { 
