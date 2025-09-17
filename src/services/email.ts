@@ -18,7 +18,8 @@ export class EmailService {
     petitionSlug: string,
     confirmToken: string
   ): Promise<boolean> {
-    const confirmUrl = `${config.appOrigin}/api/confirm?token=${confirmToken}`;
+    // Use the backend API URL for confirmation, not the frontend URL
+    const confirmUrl = `https://staging.api.petition.motherofpeace.com/api/confirm?token=${confirmToken}`;
     
     const template = this.getConfirmEmailTemplate(fullName, confirmUrl);
     

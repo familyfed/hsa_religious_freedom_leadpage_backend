@@ -89,16 +89,11 @@ export class DatabaseService {
     return null;
   }
 
-  async confirmSignature(token: string): Promise<Signature | null> {
+  async getSignatureByConfirmToken(token: string): Promise<Signature | null> {
     const { data, error } = await supabase
       .from('signatures')
-      .update({ 
-        status: 'confirmed',
-        confirmed_at: new Date().toISOString()
-      })
+      .select('*')
       .eq('confirm_token', token)
-      .eq('status', 'pending')
-      .select()
       .single();
 
     if (error) {
@@ -107,6 +102,26 @@ export class DatabaseService {
     }
 
     return data;
+  }
+
+  async confirmSignature(signatureId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('signatures')
+      .update({ 
+        status: 'confirmed',
+        confirmed_at: new Date().toISOString()
+      })
+      .eq('id', signatureId)
+      .eq('status', 'pending')
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return false;
+      throw error;
+    }
+
+    return !!data;
   }
 
   async getSignaturesByPetition(petitionSlug: string): Promise<Signature[]> {
