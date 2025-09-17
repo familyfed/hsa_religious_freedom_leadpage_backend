@@ -50,7 +50,8 @@ app.use(cors({
 }));
 
 // Rate limiting (disabled in test mode and staging for development)
-if (config.nodeEnv !== 'test' && config.nodeEnv !== 'development') {
+// TEMPORARILY DISABLED FOR FRONTEND DEVELOPMENT
+if (false && config.nodeEnv !== 'test' && config.nodeEnv !== 'development') {
   const limiter = rateLimit({
     windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.maxRequests,
