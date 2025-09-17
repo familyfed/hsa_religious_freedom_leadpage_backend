@@ -43,6 +43,8 @@ export interface PetitionStats {
   slug: string;
   title: string;
   confirmed_count: number;
+  pending_count: number;
+  total_count: number;
 }
 
 export interface PetitionStatsEnhanced {

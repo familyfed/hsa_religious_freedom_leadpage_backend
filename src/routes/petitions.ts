@@ -192,7 +192,9 @@ router.get('/:slug/stats', async (req: Request, res: Response): Promise<void> =>
     res.status(200).json({
       ok: true,
       data: {
-        confirmed_count: stats!.confirmed_count
+        confirmed_count: stats!.confirmed_count,
+        pending_count: stats!.pending_count,
+        total_count: stats!.total_count
       }
     });
 

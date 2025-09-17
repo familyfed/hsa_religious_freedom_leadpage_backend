@@ -56,7 +56,9 @@ SELECT
   p.id,
   p.slug,
   p.title,
-  COALESCE(COUNT(s.id) FILTER (WHERE s.status = 'confirmed'), 0) as confirmed_count
+  COALESCE(COUNT(s.id) FILTER (WHERE s.status = 'confirmed'), 0) as confirmed_count,
+  COALESCE(COUNT(s.id) FILTER (WHERE s.status = 'pending'), 0) as pending_count,
+  COALESCE(COUNT(s.id), 0) as total_count
 FROM public.petitions p
 LEFT JOIN public.signatures s ON p.id = s.petition_id
 WHERE p.is_public = true
