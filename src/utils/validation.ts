@@ -67,8 +67,9 @@ export const validateSignPetition = [
     .withMessage('Consent news must be a boolean'),
   
   body('turnstileToken')
-    .notEmpty()
-    .withMessage('Turnstile token is required'),
+    .optional()
+    .isString()
+    .withMessage('Turnstile token must be a string'),
   
   // Custom validation to ensure at least one of phone or email is provided
   body().custom((body) => {
