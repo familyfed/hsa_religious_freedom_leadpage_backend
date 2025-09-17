@@ -14,8 +14,8 @@ export interface Signature {
   petition_id: string;
   first_name: string;
   last_name: string;
-  phone?: string;
   email?: string;
+  phone?: string;
   country: string;
   city: string;
   state?: string;
@@ -45,11 +45,21 @@ export interface PetitionStats {
   confirmed_count: number;
 }
 
+export interface PetitionStatsEnhanced {
+  id: string;
+  slug: string;
+  title: string;
+  confirmed_count: number;
+  pending_count: number;
+  total_count: number;
+  last_updated: string;
+}
+
 export interface SignPetitionRequest {
   first_name: string;
   last_name: string;
-  phone?: string;
   email?: string;
+  phone?: string;
   country: string;
   city: string;
   state?: string;

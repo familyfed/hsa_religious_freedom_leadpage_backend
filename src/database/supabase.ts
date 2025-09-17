@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
-import { Petition, Signature, EmailLog, PetitionStats } from '../types';
+import { Petition, Signature, EmailLog, PetitionStats, PetitionStatsEnhanced } from '../types';
 
 const supabase = createClient(
   config.supabase.url,
@@ -124,10 +124,26 @@ export class DatabaseService {
     return data || [];
   }
 
-  // Stats
+  // Stats - Regular view (real-time)
   async getPetitionStats(slug: string): Promise<PetitionStats | null> {
     const { data, error } = await supabase
       .from('petition_stats')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      throw error;
+    }
+
+    return data;
+  }
+
+  // Stats - Materialized view (enhanced, pre-computed)
+  async getPetitionStatsEnhanced(slug: string): Promise<PetitionStatsEnhanced | null> {
+    const { data, error } = await supabase
+      .from('petition_stats_materialized')
       .select('*')
       .eq('slug', slug)
       .single();

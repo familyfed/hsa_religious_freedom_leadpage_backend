@@ -205,4 +205,37 @@ router.get('/:slug/stats', async (req: Request, res: Response): Promise<void> =>
   }
 });
 
+// Enhanced stats endpoint (from materialized view)
+router.get('/:slug/stats/enhanced', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { slug } = req.params;
+
+    const stats = await db.getPetitionStatsEnhanced(slug);
+    if (!stats) {
+      res.status(404).json({
+        ok: false,
+        error: 'Petition not found'
+      });
+      return;
+    }
+
+    res.status(200).json({
+      ok: true,
+      data: {
+        confirmed_count: stats.confirmed_count,
+        pending_count: stats.pending_count,
+        total_count: stats.total_count,
+        last_updated: stats.last_updated
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error fetching enhanced petition stats', { error, slug: req.params.slug });
+    res.status(500).json({
+      ok: false,
+      error: 'Could not fetch enhanced stats'
+    });
+  }
+});
+
 export default router;
