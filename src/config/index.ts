@@ -13,6 +13,7 @@ export const config = {
   // CORS origins - support multiple frontend domains including stable Vercel subdomains
   corsOrigins: [
     process.env.APP_ORIGIN || 'http://localhost:3000',
+    'http://localhost:3030', // Frontend team local development port
     'https://petition.motherofpeace.com', // NEW: Official petition domain
     'https://staging.petition.motherofpeace.com', // NEW: Staging petition domain
     'https://hsa-petitions.vercel.app', // Stable frontend domain
