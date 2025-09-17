@@ -16,9 +16,9 @@ This guide explains how to properly fetch the petition count from the backend AP
 ## 📋 **Current Database Structure**
 
 ### **Petition Slug**
-- **Current Slug:** `campaign` (not `petition-for-the-mother-of-peace`)
-- **Title:** "Faith Under Siege: Stand for Religious Freedom in Korea"
-- **Status:** Active and public
+- **Correct Slug:** `petition-for-the-mother-of-peace` ✅
+- **Title:** "Petition for the Mother of Peace"
+- **Status:** Active and public with 7 confirmed signatures
 
 ### **Database View**
 The petition stats are stored in a **PostgreSQL VIEW** (not a materialized view):
@@ -32,7 +32,7 @@ The petition stats are stored in a **PostgreSQL VIEW** (not a materialized view)
 
 ### **1. Public Petition Stats (Recommended)**
 ```http
-GET /api/petitions/campaign/stats
+GET /api/petitions/petition-for-the-mother-of-peace/stats
 ```
 
 **Response Format:**
@@ -47,7 +47,7 @@ GET /api/petitions/campaign/stats
 
 ### **2. Admin Petition Stats (If you have admin access)**
 ```http
-GET /api/admin/stats?petition=campaign
+GET /api/admin/stats?petition=petition-for-the-mother-of-peace
 ```
 
 **Response Format:**
@@ -56,9 +56,9 @@ GET /api/admin/stats?petition=campaign
   "ok": true,
   "data": {
     "id": "uuid-here",
-    "slug": "campaign",
-    "title": "Faith Under Siege: Stand for Religious Freedom in Korea",
-    "confirmed_count": 1234
+    "slug": "petition-for-the-mother-of-peace",
+    "title": "Petition for the Mother of Peace",
+    "confirmed_count": 7
   }
 }
 ```
@@ -77,7 +77,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
 // Function to get petition count
 async function getPetitionCount() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/petitions/campaign/stats`);
+    const response = await fetch(`${API_BASE_URL}/api/petitions/petition-for-the-mother-of-peace/stats`);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -116,7 +116,7 @@ function usePetitionCount() {
         setLoading(true);
         setError(null);
         
-        const response = await fetch(`${API_BASE_URL}/api/petitions/campaign/stats`);
+        const response = await fetch(`${API_BASE_URL}/api/petitions/petition-for-the-mother-of-peace/stats`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -168,7 +168,7 @@ function usePetitionCountWithRefresh(intervalMs = 30000) {
 
   const fetchCount = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/petitions/campaign/stats`);
+      const response = await fetch(`${API_BASE_URL}/api/petitions/petition-for-the-mother-of-peace/stats`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -208,10 +208,10 @@ function usePetitionCountWithRefresh(intervalMs = 30000) {
 ### **Manual Testing**
 ```bash
 # Test staging environment
-curl "https://staging.api.petition.motherofpeace.com/api/petitions/campaign/stats"
+curl "https://staging.api.petition.motherofpeace.com/api/petitions/petition-for-the-mother-of-peace/stats"
 
 # Test production environment
-curl "https://api.petition.motherofpeace.com/api/petitions/campaign/stats"
+curl "https://api.petition.motherofpeace.com/api/petitions/petition-for-the-mother-of-peace/stats"
 ```
 
 ### **Expected Response**
@@ -219,7 +219,7 @@ curl "https://api.petition.motherofpeace.com/api/petitions/campaign/stats"
 {
   "ok": true,
   "data": {
-    "confirmed_count": 0
+    "confirmed_count": 7
   }
 }
 ```
@@ -229,9 +229,9 @@ curl "https://api.petition.motherofpeace.com/api/petitions/campaign/stats"
 ## ⚠️ **Important Notes**
 
 ### **1. Petition Slug**
-- **Use:** `campaign` (not `petition-for-the-mother-of-peace`)
-- **Reason:** This is the actual slug in the database
-- **URL:** `/api/petitions/campaign/stats`
+- **Use:** `petition-for-the-mother-of-peace` ✅
+- **Reason:** This is the actual slug in the database with 7 confirmed signatures
+- **URL:** `/api/petitions/petition-for-the-mother-of-peace/stats`
 
 ### **2. Data Source**
 - **Source:** PostgreSQL VIEW (not materialized view)
@@ -255,7 +255,7 @@ curl "https://api.petition.motherofpeace.com/api/petitions/campaign/stats"
 ```
 Frontend Request
        ↓
-GET /api/petitions/campaign/stats
+GET /api/petitions/petition-for-the-mother-of-peace/stats
        ↓
 Backend API Handler
        ↓
@@ -324,8 +324,8 @@ try {
 
 ## 🎯 **Quick Start Checklist**
 
-- [ ] Use correct slug: `campaign` (not `petition-for-the-mother-of-peace`)
-- [ ] Use correct endpoint: `/api/petitions/campaign/stats`
+- [ ] Use correct slug: `petition-for-the-mother-of-peace` ✅
+- [ ] Use correct endpoint: `/api/petitions/petition-for-the-mother-of-peace/stats`
 - [ ] Handle errors gracefully with fallback to 0
 - [ ] Implement loading states
 - [ ] Consider auto-refresh for real-time updates
@@ -348,4 +348,4 @@ If you encounter any issues with the petition count API:
 **Best regards,**  
 Backend Development Team
 
-**P.S.** The API is working perfectly and ready for integration. Just make sure to use the correct slug `campaign` and you'll get the real-time petition count! 🚀
+**P.S.** The API is working perfectly and ready for integration. Just make sure to use the correct slug `petition-for-the-mother-of-peace` and you'll get the real-time petition count! 🚀
