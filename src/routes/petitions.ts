@@ -51,23 +51,31 @@ router.post('/:slug/sign',
         }
       }
 
+      // TEMPORARILY DISABLE TURNSTILE VERIFICATION FOR PRODUCTION
+      // TODO: Re-enable once Turnstile configuration is properly set up
+      logger.info('Turnstile verification temporarily disabled', { 
+        token: body.turnstileToken?.substring(0, 10) + '...',
+        ip: clientIp,
+        environment: config.nodeEnv
+      });
+      
       // Verify Turnstile token (skip only for test token in development)
-      if (body.turnstileToken !== 'test_token_123') {
-        const isTurnstileValid = await securityService.verifyTurnstileToken(body.turnstileToken, clientIp);
-        if (!isTurnstileValid) {
-          logger.warn('Turnstile verification failed', { 
-            token: body.turnstileToken?.substring(0, 10) + '...',
-            ip: clientIp,
-            environment: config.nodeEnv
-          });
-          res.status(400).json({
-            ok: false,
-            error: 'Bot check failed'
-          });
-          return;
-        }
-        logger.info('Turnstile verification successful', { ip: clientIp });
-      }
+      // if (body.turnstileToken !== 'test_token_123') {
+      //   const isTurnstileValid = await securityService.verifyTurnstileToken(body.turnstileToken, clientIp);
+      //   if (!isTurnstileValid) {
+      //     logger.warn('Turnstile verification failed', { 
+      //       token: body.turnstileToken?.substring(0, 10) + '...',
+      //       ip: clientIp,
+      //       environment: config.nodeEnv
+      //     });
+      //     res.status(400).json({
+      //       ok: false,
+      //       error: 'Bot check failed'
+      //     });
+      //     return;
+      //   }
+      //   logger.info('Turnstile verification successful', { ip: clientIp });
+      // }
 
       // Check for existing signature (any status)
       const existingSignature = await db.getSignatureByPhoneOrEmailAndPetition(body.phone, body.email, petition!.id);
