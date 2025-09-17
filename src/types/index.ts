@@ -61,8 +61,8 @@ export interface PetitionStatsEnhanced {
 export interface SignPetitionRequest {
   first_name: string;
   last_name: string;
-  email?: string;
-  phone?: string;
+  email: string; // Now required
+  phone?: string; // Optional
   country: string;
   city: string;
   state?: string;

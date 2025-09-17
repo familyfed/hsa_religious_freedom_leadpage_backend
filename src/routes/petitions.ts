@@ -108,7 +108,8 @@ router.post('/:slug/sign',
       const uaHash = securityService.hashData(req.get('User-Agent') || '');
       
       // Determine if we need email confirmation
-      const needsEmailConfirmation = body.email && !body.phone;
+      // Since email is now required, we need confirmation unless phone is also provided
+      const needsEmailConfirmation = !body.phone; // If no phone provided, need email confirmation
       const confirmToken = needsEmailConfirmation ? securityService.generateConfirmToken() : undefined;
       const status = needsEmailConfirmation ? 'pending' : 'confirmed';
 

@@ -37,7 +37,6 @@ export const validateSignPetition = [
     .withMessage('Valid phone number is required (10+ digits)'),
   
   body('email')
-    .optional()
     .isEmail()
     .normalizeEmail()
     .withMessage('Valid email is required'),
@@ -86,10 +85,10 @@ export const validateSignPetition = [
     .isString()
     .withMessage('Turnstile token must be a string'),
   
-  // Custom validation to ensure at least one of phone or email is provided
+  // Custom validation to ensure email is provided (phone is now completely optional)
   body().custom((body) => {
-    if (!body.phone && !body.email) {
-      throw new Error('Either phone number or email address is required');
+    if (!body.email) {
+      throw new Error('Email address is required');
     }
     return true;
   }),
