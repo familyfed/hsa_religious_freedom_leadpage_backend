@@ -14,6 +14,7 @@ export const config = {
   corsOrigins: [
     process.env.APP_ORIGIN || 'http://localhost:3000',
     'https://petition.motherofpeace.com', // NEW: Official petition domain
+    'https://staging.petition.motherofpeace.com', // NEW: Staging petition domain
     'https://hsa-petitions.vercel.app', // Stable frontend domain
     'https://hsa-petitions-api.vercel.app', // Stable backend domain
     'https://religiousfreedom.vercel.app', // Original domain
