@@ -61,6 +61,21 @@ export const validateSignPetition = [
     .escape()
     .withMessage('State must be 2-50 characters if provided'),
   
+  body('postal_code')
+    .optional()
+    .custom((value) => {
+      // Accept any string or empty string, no format validation
+      if (value === undefined || value === null || value === '') {
+        return true; // Allow empty/undefined
+      }
+      if (typeof value === 'string' && value.length <= 50) {
+        return true; // Allow any string up to 50 characters
+      }
+      throw new Error('Postal code must be a string with 0-50 characters if provided');
+    })
+    .trim()
+    .escape(),
+  
   body('consent_news')
     .optional()
     .isBoolean()
@@ -146,6 +161,7 @@ export const sanitizeSignPetitionRequest = (req: Request, _res: Response, next: 
   body.country = body.country?.trim().toUpperCase() || '';
   body.city = body.city?.trim().replace(/[<>]/g, '') || '';
   body.state = body.state?.trim().replace(/[<>]/g, '') || undefined;
+  body.postal_code = body.postal_code?.trim().replace(/[<>]/g, '') || undefined;
   
   req.body = body;
   next();

@@ -19,6 +19,7 @@ export interface Signature {
   country: string;
   city: string;
   state?: string;
+  postal_code?: string; // Added postal code field
   consent_news: boolean;
   status: 'pending' | 'confirmed' | 'unsubscribed';
   confirm_token?: string;
@@ -65,6 +66,7 @@ export interface SignPetitionRequest {
   country: string;
   city: string;
   state?: string;
+  postal_code?: string; // Added postal code field
   consent_news?: boolean;
   turnstileToken: string;
 }
