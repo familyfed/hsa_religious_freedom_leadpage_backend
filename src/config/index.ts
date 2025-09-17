@@ -49,10 +49,11 @@ export const config = {
     adminApiKey: process.env.ADMIN_API_KEY!,
   },
 
-  // Rate Limiting
+  // Rate Limiting - Environment specific
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000', 10), // 1 hour
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '3', 10),
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || 
+      (process.env.NODE_ENV === 'production' ? '10' : '100'), 10), // 10 for production, 100 for staging/dev
   },
 
   // Analytics
